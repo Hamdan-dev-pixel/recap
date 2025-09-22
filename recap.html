@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Recap Jualan - Galaxy Theme</title>
+<style>
+  :root {
+    --bg: radial-gradient(circle at 20% 30%, #0f172a, #1a103d 80%);
+    --card: rgba(255,255,255,0.05);
+    --muted: #94a3b8;
+    --text: #e2e8f0;
+    --accent-1: #7c3aed;
+    --accent-2: #06b6d4;
+    --glass-border: rgba(255,255,255,0.08);
+    --btn-bg: linear-gradient(135deg,var(--accent-1),var(--accent-2));
+  }
+
+  body {
+    margin:0; font-family:Arial, sans-serif; background:var(--bg); color:var(--text);
+    padding:16px;
+    min-height:100vh;
+    background-attachment: fixed;
+  }
+
+  h1 { font-size:22px; margin:0 0 10px; text-align:center; }
+
+  .form label { display:block; margin-top:10px; font-size:14px; }
+  .form input, .form select, .form textarea {
+    width:100%; padding:12px; margin-top:4px; border-radius:8px;
+    border:1px solid var(--glass-border); background:var(--card); color:var(--text);
+    font-size:16px;
+  }
+  .form button {
+    margin-top:14px; padding:12px; width:100%;
+    border:none; border-radius:8px; color:#fff; font-size:16px;
+    background:var(--btn-bg); cursor:pointer;
+  }
+  .form button:active { transform:scale(0.98); }
+
+  .table-wrap { overflow-x:auto; margin-top:20px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; min-width:600px; }
+  thead th {
+    background:var(--card); padding:12px; text-align:left; font-size:13px;
+    position:sticky; top:0; z-index:2;
+    backdrop-filter: blur(4px);
+  }
+  td { padding:12px; border-bottom:1px solid var(--glass-border); text-align:center; }
+  tfoot td { font-weight:bold; padding:12px; background:rgba(255,255,255,0.05); }
+
+  .btn-ghost {
+    padding:6px 10px; border-radius:6px; border:1px solid var(--glass-border);
+    background:transparent; color:var(--text); font-size:12px;
+    margin:2px; cursor:pointer;
+  }
+
+  .summary {
+    display:flex; flex-wrap:wrap; gap:12px; margin-top:16px;
+  }
+  .tile {
+    flex:1; min-width:140px; background:var(--card); border:1px solid var(--glass-border);
+    border-radius:10px; padding:12px; text-align:center;
+  }
+  .tile .label { font-size:12px; color:var(--muted); }
+  .tile .value { font-size:18px; font-weight:bold; margin-top:4px; color:var(--accent-2); }
+</style>
+</head>
+<body>
+  <h1>🌌 Recap Jualan - Galaxy</h1>
+
+  <div class="form">
+    <form id="jualForm">
+      <label>Bulan
+        <select id="bulan" required>
+          <option value="">-- Pilih Bulan --</option>
+          <option>Januari</option><option>Februari</option><option>Maret</option><option>April</option>
+          <option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option>
+          <option>September</option><option>Oktober</option><option>November</option><option>Desember</option>
+        </select>
+      </label>
+
+      <label>Produk
+        <input type="text" id="produk" required />
+      </label>
+
+      <label>Harga Beli
+        <input type="number" id="hargaBeli" required />
+      </label>
+
+      <label>Harga Jual
+        <input type="number" id="hargaJual" required />
+      </label>
+
+      <label>Catatan
+        <textarea id="catatan"></textarea>
+      </label>
+
+      <button type="submit">Tambah Data 🚀</button>
+    </form>
+  </div>
+
+  <div class="table-wrap">
+    <table id="rekapTable">
+      <thead>
+        <tr>
+          <th>No</th><th>Bulan</th><th>Produk</th>
+          <th>Harga Beli</th><th>Harga Jual</th><th>Keuntungan</th><th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5">Total Keuntungan</td>
+          <td id="totalKeuntungan">Rp 0</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="summary">
+    <div class="tile">
+      <div class="label">Total Data</div>
+      <div class="value" id="countItems">0</div>
+    </div>
+    <div class="tile">
+      <div class="label">Grand Keuntungan</div>
+      <div class="value" id="grandValue">Rp 0</div>
+    </div>
+  </div>
+
+<script>
+  const form = document.getElementById("jualForm");
+  const tbody = document.querySelector("#rekapTable tbody");
+  const totalKeuntunganEl = document.getElementById("totalKeuntungan");
+  const grandValue = document.getElementById("grandValue");
+  const countItems = document.getElementById("countItems");
+
+  let data = JSON.parse(localStorage.getItem("rekapData")) || [];
+
+  function renderTable() {
+    tbody.innerHTML = "";
+    let total = 0;
+    data.forEach((item,i)=>{
+      let keuntungan = item.hargaJual - item.hargaBeli;
+      total += keuntungan;
+      let tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${i+1}</td>
+        <td>${item.bulan}</td>
+        <td>${item.produk}</td>
+        <td>Rp ${item.hargaBeli.toLocaleString()}</td>
+        <td>Rp ${item.hargaJual.toLocaleString()}</td>
+        <td>Rp ${keuntungan.toLocaleString()}</td>
+        <td>
+          <button class="btn-ghost" onclick="editItem(${i})">✏️</button>
+          <button class="btn-ghost" onclick="deleteItem(${i})">🗑</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+    totalKeuntunganEl.textContent = "Rp " + total.toLocaleString();
+    grandValue.textContent = "Rp " + total.toLocaleString();
+    countItems.textContent = data.length;
+  }
+
+  form.addEventListener("submit", e=>{
+    e.preventDefault();
+    const bulan = document.getElementById("bulan").value;
+    const produk = document.getElementById("produk").value;
+    const hargaBeli = Number(document.getElementById("hargaBeli").value);
+    const hargaJual = Number(document.getElementById("hargaJual").value);
+    const catatan = document.getElementById("catatan").value;
+    if(!bulan||!produk) return;
+    data.push({bulan, produk, hargaBeli, hargaJual, catatan});
+    localStorage.setItem("rekapData", JSON.stringify(data));
+    form.reset();
+    renderTable();
+  });
+
+  window.editItem = i=>{
+    let it=data[i];
+    document.getElementById("bulan").value=it.bulan;
+    document.getElementById("produk").value=it.produk;
+    document.getElementById("hargaBeli").value=it.hargaBeli;
+    document.getElementById("hargaJual").value=it.hargaJual;
+    document.getElementById("catatan").value=it.catatan;
+    data.splice(i,1);
+    localStorage.setItem("rekapData", JSON.stringify(data));
+    renderTable();
+    window.scrollTo({top:0,behavior:"smooth"});
+  };
+
+  window.deleteItem = i=>{
+    if(confirm("Hapus data ini?")){
+      data.splice(i,1);
+      localStorage.setItem("rekapData", JSON.stringify(data));
+      renderTable();
+    }
+  };
+
+  renderTable();
+</script>
+</body>
+</html>
